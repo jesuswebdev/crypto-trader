@@ -7,7 +7,8 @@ module.exports = {
       filename: path.resolve("../", "./dev.sqlite3")
     },
     migrations: {
-      tableName: "knex_migrations"
+      tableName: "knex_migrations",
+      directory: path.resolve("../", "./migrations")
     },
     useNullAsDefault: true
   },
@@ -16,7 +17,8 @@ module.exports = {
     client: "sqlite3",
     connection: { filename: path.resolve("../", "./db.sqlite3") },
     migrations: {
-      tableName: "knex_migrations"
+      tableName: "knex_migrations",
+      directory: path.resolve("../", "./migrations")
     },
     useNullAsDefault: true
   }

@@ -1,0 +1,21 @@
+{
+  "name": "trader",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "npm run migrate && node app.js",
+    "knex": "./node_modules/knex/bin/cli.js",
+    "migrate": "npm run knex migrate:latest"
+  },
+  "dependencies": {
+    "@crypto-trader/config": "file:./config",
+    "@crypto-trader/utils": "file:../utils",
+    "dotenv": "^8.2.0",
+    "knex": "^0.95.11",
+    "sqlite3": "^5.0.2",
+    "ws": "^8.2.3"
+  },
+  "author": "",
+  "license": "ISC"
+}

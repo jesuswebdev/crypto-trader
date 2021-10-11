@@ -1,7 +1,7 @@
 FROM node:14.18-alpine3.12
 WORKDIR /usr/src/app
-COPY package*.json ./
+COPY ./account-observer/package*.json ./
 RUN npm install --only=production
 ENV NODE_ENV production
-COPY . .
+COPY ./account-observer/ ./
 CMD ["npm", "start", "--prefix", "./account-observer"]

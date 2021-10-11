@@ -7,21 +7,21 @@ const { QUOTE_ASSET, ENVIRONMENT } = require("@crypto-trader/config");
 module.exports = class Observer {
   constructor(db) {
     this.db = db;
-    this.allowed_pairs = pairs.map(v => v.symbol);
-    this.updateListenKeyInterval = null;
+    this.allowedPairs = pairs.map(v => v.symbol);
+    this.listenKeyKeepAliveInterval = null;
   }
 
-  startUpdateListenKeyInterval() {
-    this.updateListenKeyInterval = setInterval(async () => {
+  startListenKeyKeepAliveInterval() {
+    this.listenKeyKeepAliveInterval = setInterval(async () => {
       const [account] = await this.db("accounts")
         .where({ type: ENVIRONMENT })
         .select("spot_account_listen_key");
-      await binance.updateListenKey(account.spot_account_listen_key);
+      await binance.listenKeyKeepAlive(account.spot_account_listen_key);
     }, milliseconds.minute * 30);
   }
 
-  stopUpdateListenKeyInterval() {
-    clearInterval(this.updateListenKeyInterval);
+  stopListenKeyKeepAliveInterval() {
+    clearInterval(this.listenKeyKeepAliveInterval);
   }
 
   async updateBalance() {
@@ -64,7 +64,7 @@ module.exports = class Observer {
       spot_account_listen_key
     });
 
-    this.startUpdateListenKeyInterval();
+    this.startListenKeyKeepAliveInterval();
 
     return spot_account_listen_key;
   }
@@ -98,7 +98,7 @@ module.exports = class Observer {
           const message = parsedData.data;
           if (message.e === "executionReport") {
             const parsedOrder = parseOrder(message);
-            const validPair = this.allowed_pairs.some(
+            const validPair = this.allowedPairs.some(
               v => v === parsedOrder.symbol
             );
 
@@ -137,7 +137,7 @@ module.exports = class Observer {
         console.log(
           `${new Date().toISOString()} | Spot Orders Observer Stream closed.`
         );
-        this.stopUpdateListenKeyInterval();
+        this.stopListenKeyKeepAliveInterval();
         await this.init();
       });
     } catch (error) {

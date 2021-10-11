@@ -7,7 +7,7 @@ async function createListenKey() {
   return data?.listenKey;
 }
 
-async function updateListenKey(listenKey) {
+async function listenKeyKeepAlive(listenKey) {
   const query = new URLSearchParams({ listenKey }).toString();
   await binance.put(`/api/v3/userDataStream?${query}`);
   return null;
@@ -19,4 +19,4 @@ async function getAccountBalance(quote_asset) {
   return +nz(asset?.free);
 }
 
-exports.binance = { createListenKey, updateListenKey, getAccountBalance };
+exports.binance = { createListenKey, listenKeyKeepAlive, getAccountBalance };

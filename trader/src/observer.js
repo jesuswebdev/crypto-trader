@@ -29,8 +29,8 @@ module.exports = class Observer {
 
     const [signal] = await this.db("signals").where({ id: signalId }).select();
 
-    const notEnoughBalance =
-      account?.balance <= DEFAULT_BUY_AMOUNT && signalData.type === "entry";
+    const enoughBalance =
+      account?.balance > DEFAULT_BUY_AMOUNT && signalData.type === "entry";
 
     const whitelisted =
       WHITELIST.length === 0 ||
@@ -38,14 +38,14 @@ module.exports = class Observer {
 
     const blacklisted = BLACKLIST.some(item => item === signalData.symbol);
 
-    const doesNotHaveBuyOrder = signalData.type === "exit" && !signal?.orderId;
+    const hasBuyOrder = signalData.type === "exit" && !!signal?.orderId;
 
     if (
       Date.now() < account?.create_order_after ||
-      notEnoughBalance ||
+      !enoughBalance ||
       !whitelisted ||
       blacklisted ||
-      doesNotHaveBuyOrder
+      !hasBuyOrder
     ) {
       return;
     }

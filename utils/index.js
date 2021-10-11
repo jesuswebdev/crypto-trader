@@ -1,18 +1,17 @@
 const axios = require("axios");
 const crypto = require("crypto");
 const path = require("path");
-const pairs = require(path.resolve(
+const PAIRS = require(path.resolve(
   __dirname,
   "./",
   `${String(process.env.QUOTE_ASSET).toLowerCase()}_pairs.js`
 ));
 
-const milliseconds = {
-  seconds: 1e3,
-  minute: 6e4,
-  hour: 36e5,
-  day: 36e5 * 24,
-  week: 36e5 * 24 * 7
+const MILLISECONDS = {
+  SECOND: 1e3,
+  MINUTE: 6e4,
+  HOUR: 36e5,
+  DAY: 36e5 * 24
 };
 
 const invalidNumber = v =>
@@ -25,7 +24,7 @@ function toFixedPrecision(n, digits = 8) {
 }
 
 function getSymbolPrecision(symbol, type) {
-  return pairs.find(p => p.symbol === symbol)[type];
+  return PAIRS.find(p => p.symbol === symbol)[type];
 }
 
 const getResult = (value, tick) => {
@@ -94,8 +93,8 @@ function getBinanceInstance(env) {
 }
 
 module.exports = {
-  pairs,
-  milliseconds,
+  PAIRS,
+  MILLISECONDS,
   nz,
   toSymbolPrecision,
   toSymbolStepPrecision,

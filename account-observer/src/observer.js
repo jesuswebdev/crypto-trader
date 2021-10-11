@@ -1,13 +1,13 @@
 const ws = require("ws");
 const { binance } = require("../utils/http");
 const { parseOrder, parseAccountUpdate } = require("../utils");
-const { pairs, milliseconds } = require("@crypto-trader/utils");
+const { PAIRS, MILLISECONDS } = require("@crypto-trader/utils");
 const { QUOTE_ASSET, ENVIRONMENT } = require("@crypto-trader/config");
 
 module.exports = class Observer {
   constructor(db) {
     this.db = db;
-    this.allowedPairs = pairs.map(v => v.symbol);
+    this.allowedPairs = PAIRS.map(({ symbol }) => symbol);
     this.listenKeyKeepAliveInterval = null;
   }
 
@@ -17,7 +17,7 @@ module.exports = class Observer {
         .where({ type: ENVIRONMENT })
         .select("spot_account_listen_key");
       await binance.listenKeyKeepAlive(account.spot_account_listen_key);
-    }, milliseconds.minute * 30);
+    }, MILLISECONDS.MINUTE * 30);
   }
 
   stopListenKeyKeepAliveInterval() {

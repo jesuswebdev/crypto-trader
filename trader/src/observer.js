@@ -1,6 +1,6 @@
 const ws = require("ws");
 const { binance } = require("../utils/http");
-const { pairs, toSymbolStepPrecision, nz } = require("@crypto-trader/utils");
+const { toSymbolStepPrecision, nz } = require("@crypto-trader/utils");
 const {
   QUOTE_ASSET,
   ENVIRONMENT,
@@ -17,7 +17,6 @@ const MAX_REQUESTS = 48;
 module.exports = class Observer {
   constructor(db) {
     this.db = db;
-    this.allowed_pairs = pairs.map(v => v.symbol);
     this.client = new ws(WS_API_URL);
   }
 
@@ -32,12 +31,20 @@ module.exports = class Observer {
 
     const notEnoughBalance =
       account?.balance <= DEFAULT_BUY_AMOUNT && signalData.type === "entry";
+
     const whitelisted =
       WHITELIST.length === 0 ||
-      (WHITELIST.length > 0 && WHITELIST.some(s => s === signalData.symbol));
+      (WHITELIST.length > 0 &&
+        WHITELIST.some(
+          whitelistedPair => whitelistedPair === signalData.symbol
+        ));
+
     const blacklisted =
-      BLACKLIST.length > 0 && BLACKLIST.some(s => s === signalData.symbol);
+      BLACKLIST.length > 0 &&
+      BLACKLIST.some(blacklistedPair => blacklistedPair === signalData.symbol);
+
     const doesNotHaveBuyOrder = signalData.type === "exit" && !signal?.orderId;
+
     if (
       Date.now() < account?.create_order_after ||
       notEnoughBalance ||
@@ -75,31 +82,29 @@ module.exports = class Observer {
         }
       }
       if (query.side === "SELL") {
-        let buy_order = await this.getOrderFromDbOrBinance(signal);
-        if (
-          buy_order?.status !== "CANCELED" &&
-          buy_order?.status !== "FILLED"
-        ) {
-          const cancel_query = new URLSearchParams({
-            symbol: buy_order.symbol,
-            orderId: buy_order.orderId
+        let buyOrder = await this.getOrderFromDbOrBinance(signal);
+
+        if (buyOrder?.status !== "CANCELED" && buyOrder?.status !== "FILLED") {
+          const cancelQuery = new URLSearchParams({
+            symbol: buyOrder.symbol,
+            orderId: buyOrder.orderId
           }).toString();
-          await binance.delete(`/api/v3/order?${cancel_query}`);
-          buy_order = await this.getOrderFromDbOrBinance(signal);
+          await binance.delete(`/api/v3/order?${cancelQuery}`);
+          buyOrder = await this.getOrderFromDbOrBinance(signal);
         }
 
-        const quantity_to_sell =
-          +nz(buy_order?.executedQty) -
-          (signal.symbol.replace(QUOTE_ASSET, "") === buy_order?.commissionAsset
-            ? +nz(buy_order?.commissionAmount)
+        const quantityToSell =
+          +nz(buyOrder?.executedQty) -
+          (signal.symbol.replace(QUOTE_ASSET, "") === buyOrder?.commissionAsset
+            ? +nz(buyOrder?.commissionAmount)
             : 0);
 
-        if (quantity_to_sell === 0) {
+        if (quantityToSell === 0) {
           return;
         }
 
         query["quantity"] = toSymbolStepPrecision(
-          quantity_to_sell,
+          quantityToSell,
           signalData.symbol
         );
       }
@@ -126,7 +131,7 @@ module.exports = class Observer {
 
   async getOrderFromDbOrBinance(signal) {
     if (!signal) {
-      throw new Error("Order is not defined.");
+      throw new Error("Signal is not defined.");
     }
 
     let order;

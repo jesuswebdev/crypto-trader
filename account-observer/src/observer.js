@@ -9,7 +9,6 @@ module.exports = class Observer {
     this.db = db;
     this.allowed_pairs = pairs.map(v => v.symbol);
     this.updateListenKeyInterval = null;
-    this.updateAccountBalanceInterval = null;
   }
 
   startUpdateListenKeyInterval() {

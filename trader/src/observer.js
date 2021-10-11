@@ -34,14 +34,9 @@ module.exports = class Observer {
 
     const whitelisted =
       WHITELIST.length === 0 ||
-      (WHITELIST.length > 0 &&
-        WHITELIST.some(
-          whitelistedPair => whitelistedPair === signalData.symbol
-        ));
+      WHITELIST.some(item => item === signalData.symbol);
 
-    const blacklisted =
-      BLACKLIST.length > 0 &&
-      BLACKLIST.some(blacklistedPair => blacklistedPair === signalData.symbol);
+    const blacklisted = BLACKLIST.some(item => item === signalData.symbol);
 
     const doesNotHaveBuyOrder = signalData.type === "exit" && !signal?.orderId;
 

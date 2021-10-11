@@ -1,7 +1,15 @@
 const dotenv = require("dotenv");
 dotenv.config();
+const { PAIRS } = require("@crypto-trader/utils");
 
-const filterList = (s = "") => s.split(",").filter(v => !!v);
+const filterList = (str = "") => {
+  if (!str.length) return [];
+  const pairsObject = {};
+  for (const pair of PAIRS) {
+    pairsObject[pair.symbol] = true;
+  }
+  return str.split(",").filter(v => !!pairsObject[v]);
+};
 
 exports.WS_API_URL = process.env.WS_API_URL;
 exports.ENVIRONMENT = process.env.NODE_ENV;

@@ -64,10 +64,6 @@ module.exports = class Observer {
 
   async init() {
     try {
-      console.log(
-        `Observer for spot account started at ${new Date().toUTCString()}.`
-      );
-
       await this.updateBalance();
       let spot_account_listen_key = await this.getListenKey();
 

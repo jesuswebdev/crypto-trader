@@ -1,6 +1,5 @@
 const dotenv = require("dotenv");
-dotenv.config();
-const { PAIRS } = require("@crypto-trader/utils");
+const { PAIRS, MILLISECONDS } = require("@crypto-trader/utils");
 
 const filterList = (str = "") => {
   if (!str.length) return [];
@@ -20,3 +19,6 @@ exports.DEFAULT_SELL_ORDER_TYPE =
 exports.DEFAULT_BUY_AMOUNT = +process.env.DEFAULT_BUY_AMOUNT;
 exports.WHITELIST = filterList(process.env.WHITELIST);
 exports.BLACKLIST = filterList(process.env.BLACKLIST);
+exports.BUY_ORDER_TTL = +(process.env.BUY_ORDER_TTL ?? 0) * MILLISECONDS.SECOND;
+exports.SELL_ORDER_TTL =
+  +(process.env.SELL_ORDER_TTL ?? 0) * MILLISECONDS.SECOND;

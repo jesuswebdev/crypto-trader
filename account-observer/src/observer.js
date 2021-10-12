@@ -25,18 +25,11 @@ module.exports = class Observer {
   }
 
   async updateBalance() {
-    const [account] = await this.db("accounts")
-      .where({ type: ENVIRONMENT })
-      .select();
-
     const balance = await binance.getAccountBalance(QUOTE_ASSET);
-    if (!account) {
-      await this.db("accounts").insert({ type: ENVIRONMENT, balance });
-    } else {
-      await this.db("accounts")
-        .where({ type: ENVIRONMENT })
-        .update({ balance });
-    }
+    await this.db("accounts")
+      .insert({ type: ENVIRONMENT, balance })
+      .onConflict(["type"])
+      .merge();
   }
 
   async getListenKey() {

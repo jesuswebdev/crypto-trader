@@ -3,5 +3,6 @@ WORKDIR /usr/src/app
 COPY ./trader/package*.json ./
 RUN npm install --only=production
 ENV NODE_ENV production
+ENV BINANCE_API_URL https://api.binance.com
 COPY ./trader/ ./
 CMD ["npm", "start", "--prefix", "./trader"]

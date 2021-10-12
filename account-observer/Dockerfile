@@ -3,5 +3,6 @@ WORKDIR /usr/src/app
 COPY ./account-observer/package*.json ./
 RUN npm install --only=production
 ENV NODE_ENV production
+ENV BINANCE_API_URL https://api.binance.com
 COPY ./account-observer/ ./
 CMD ["npm", "start", "--prefix", "./account-observer"]

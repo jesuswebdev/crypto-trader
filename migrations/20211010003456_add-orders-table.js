@@ -2,7 +2,6 @@ exports.up = function (knex) {
   return knex.schema.hasTable("orders").then(function (exists) {
     if (!exists) {
       return knex.schema.createTable("orders", function (table) {
-        table.increments("id");
         table.string("symbol", 255).notNullable();
         table.integer("orderId").notNullable();
         table.integer("orderListId");
@@ -24,7 +23,6 @@ exports.up = function (knex) {
         table.integer("eventTime");
         table.integer("transactTime");
         table.timestamps();
-        table.index(["clientOrderId"]);
         table.unique(["symbol", "orderId"]);
       });
     }

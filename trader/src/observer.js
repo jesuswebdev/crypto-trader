@@ -17,7 +17,7 @@ const MAX_REQUESTS = 48;
 module.exports = class Observer {
   constructor(db) {
     this.db = db;
-    this.client = new ws(WS_API_URL);
+    this.client = null;
   }
 
   async createOrder(signalData) {
@@ -170,9 +170,7 @@ module.exports = class Observer {
 
   async init() {
     try {
-      console.log(
-        `Observer for signals started at ${new Date().toUTCString()}.`
-      );
+      this.client = new ws(WS_API_URL);
 
       this.client.on("open", () => {
         console.log(
@@ -201,7 +199,7 @@ module.exports = class Observer {
 
       this.client.on("close", async () => {
         console.log(
-          `${new Date().toISOString()} | Signals Observer Stream closed.`
+          `${new Date().toISOString()} | Signals Observer | Stream closed.`
         );
         await this.init();
       });

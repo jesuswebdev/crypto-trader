@@ -9,7 +9,9 @@ const {
   DEFAULT_BUY_ORDER_TYPE,
   DEFAULT_SELL_ORDER_TYPE,
   WHITELIST,
-  BLACKLIST
+  BLACKLIST,
+  SELL_ORDER_TTL,
+  BUY_ORDER_TTL
 } = require("@crypto-trader/config");
 
 const MAX_REQUESTS = 48;
@@ -27,8 +29,6 @@ module.exports = class Observer {
       .where({ type: ENVIRONMENT })
       .select();
 
-    const [signal] = await this.db("signals").where({ id: signalId }).select();
-
     const enoughBalance =
       account?.balance > DEFAULT_BUY_AMOUNT && signalData.type === "entry";
 
@@ -38,14 +38,11 @@ module.exports = class Observer {
 
     const blacklisted = BLACKLIST.some(item => item === signalData.symbol);
 
-    const hasBuyOrder = signalData.type === "exit" && !!signal?.orderId;
-
     if (
       Date.now() < account?.create_order_after ||
       !enoughBalance ||
       !whitelisted ||
-      blacklisted ||
-      !hasBuyOrder
+      blacklisted
     ) {
       return;
     }
@@ -77,21 +74,25 @@ module.exports = class Observer {
         }
       }
       if (query.side === "SELL") {
-        let buyOrder = await this.getOrderFromDbOrBinance(signal);
+        const [signal] = await this.db("signals")
+          .where({ id: signalId })
+          .select();
 
-        if (buyOrder?.status !== "CANCELED" && buyOrder?.status !== "FILLED") {
+        let order = await this.getOrderFromDbOrBinance(signal);
+
+        if (order?.status !== "CANCELED" && order?.status !== "FILLED") {
           const cancelQuery = new URLSearchParams({
-            symbol: buyOrder.symbol,
-            orderId: buyOrder.orderId
+            symbol: order.symbol,
+            orderId: order.orderId
           }).toString();
           await binance.delete(`/api/v3/order?${cancelQuery}`);
-          buyOrder = await this.getOrderFromDbOrBinance(signal);
+          order = await this.getOrderFromDbOrBinance(signal);
         }
 
         const quantityToSell =
-          +nz(buyOrder?.executedQty) -
-          (signal.symbol.replace(QUOTE_ASSET, "") === buyOrder?.commissionAsset
-            ? +nz(buyOrder?.commissionAmount)
+          +nz(order?.executedQty) -
+          (signal.symbol.replace(QUOTE_ASSET, "") === order?.commissionAsset
+            ? +nz(order?.commissionAmount)
             : 0);
 
         if (quantityToSell === 0) {
@@ -110,12 +111,21 @@ module.exports = class Observer {
 
       await this.checkHeaders(headers);
 
-      if (!!data?.orderId && query.side === "BUY") {
+      if (!!data?.orderId) {
         await this.db("signals").insert({
           symbol: signalData.symbol,
           id: signalId,
-          orderId: data.orderId
+          orderId: data.orderId,
+          type: signalData.type
         });
+      }
+
+      if (
+        query.type === "LIMIT" &&
+        ((query.side === "BUY" && BUY_ORDER_TTL) ||
+          (query.side === "SELL" && SELL_ORDER_TTL))
+      ) {
+        this.setOrderTimeout(data);
       }
     } catch (error) {
       console.error(error);
@@ -166,6 +176,34 @@ module.exports = class Observer {
         .update({ create_order_after: Date.now() + 1e4 });
     }
     return;
+  }
+
+  setOrderTimeout(paramOrder) {
+    setTimeout(
+      async () => {
+        let order = await this.getOrderFromDbOrBinance(paramOrder);
+        if (order?.status !== "CANCELED" && order?.status !== "FILLED") {
+          if (paramOrder.side === "BUY") {
+            const cancelQuery = new URLSearchParams({
+              symbol: order.symbol,
+              orderId: order.orderId
+            }).toString();
+            await binance.delete(`/api/v3/order?${cancelQuery}`);
+          } else {
+            const [signal] = this.db("signals")
+              .where({ symbol: paramOrder.symbol })
+              .andWhere({ orderId: paramOrder.orderId })
+              .select();
+            await this.createOrder({
+              ...signal,
+              _id: signal.id,
+              orderType: "MARKET"
+            });
+          }
+        }
+      },
+      paramOrder.side === "BUY" ? BUY_ORDER_TTL : SELL_ORDER_TTL
+    );
   }
 
   async init() {

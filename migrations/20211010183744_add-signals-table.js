@@ -5,6 +5,7 @@ exports.up = function (knex) {
         table.string("id", 255).notNullable();
         table.integer("orderId");
         table.string("symbol", 255).notNullable();
+        table.string("type");
       });
     }
   });

@@ -6,8 +6,8 @@ const {
   ENVIRONMENT,
   WS_API_URL,
   DEFAULT_BUY_AMOUNT,
-  DEFAULT_BUY_ORDER_TYPE,
-  DEFAULT_SELL_ORDER_TYPE,
+  BUY_ORDER_TYPE,
+  SELL_ORDER_TYPE,
   WHITELIST,
   BLACKLIST,
   SELL_ORDER_TTL,
@@ -51,8 +51,8 @@ module.exports = class Observer {
       const orderType =
         signalData.orderType ??
         (signalData.type === "entry"
-          ? DEFAULT_BUY_ORDER_TYPE
-          : DEFAULT_SELL_ORDER_TYPE);
+          ? BUY_ORDER_TYPE
+          : SELL_ORDER_TYPE);
 
       let query = {
         type: orderType,

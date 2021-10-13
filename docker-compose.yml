@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: ./account-observer/Dockerfile
     volumes:
-      - db_data:/usr/src/app
+      - db_data:/data/db
     env_file:
       - .env
 
@@ -16,7 +16,7 @@ services:
       context: .
       dockerfile: ./trader/Dockerfile
     volumes:
-      - db_data:/usr/src/app
+      - db_data:/data/db
     env_file:
       - .env
 volumes:

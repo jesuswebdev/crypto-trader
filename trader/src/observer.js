@@ -30,7 +30,9 @@ module.exports = class Observer {
       .select();
 
     const enoughBalance =
-      account?.balance > DEFAULT_BUY_AMOUNT && signalData.type === "entry";
+      signalData.type === "entry"
+        ? account?.balance > DEFAULT_BUY_AMOUNT
+        : true;
 
     const whitelisted =
       WHITELIST.length === 0 ||

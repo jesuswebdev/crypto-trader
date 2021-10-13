@@ -30,7 +30,6 @@ BLACKLIST=
 
 - `wss://ws.jjscryptosignals.com`: Trend signals with `BTC` as quote asset, on the 1D timeframe. Check the [Telegram Channel](https://t.me/jjscryptosignals) for previous signals.
 - `wss://ws.jjscryptosignals.com/v1/`: Bottom detector signals (former BD Signals) with `BUSD` as quote asset, on the 1H timeframe. Check the [Telegram Channel](https://t.me/jjscryptosignals3) for previous signals.
-- `wss://ws.jjscryptosignals.com/v2/`: Trend signals with `BUSD` as quote asset, on the 1H timeframe. Check the [Telegram Channel](https://t.me/jjscryptosignals2) for previous signals.
 
 **`QUOTE_ASSET`**: Must be set based on the `WS_API_URL` chosen.
 

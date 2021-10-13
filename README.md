@@ -56,7 +56,7 @@ BLACKLIST=
 
 To start the client, open a terminal in the root folder of the project and run:
 
-`docker-compose up -d`
+`docker-compose up --build -d`
 
 ### stop
 

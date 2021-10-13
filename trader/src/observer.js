@@ -52,9 +52,7 @@ module.exports = class Observer {
     try {
       const orderType =
         signalData.orderType ??
-        (signalData.type === "entry"
-          ? BUY_ORDER_TYPE
-          : SELL_ORDER_TYPE);
+        (signalData.type === "entry" ? BUY_ORDER_TYPE : SELL_ORDER_TYPE);
 
       let query = {
         type: orderType,

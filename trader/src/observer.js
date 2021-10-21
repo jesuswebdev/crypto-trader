@@ -16,6 +16,10 @@ const {
 
 const MAX_REQUESTS = 48;
 
+function logMessage() {
+  console.log(`[${new Date().toISOString()}]`, ...arguments);
+}
+
 module.exports = class Observer {
   constructor(db) {
     this.db = db;
@@ -24,6 +28,11 @@ module.exports = class Observer {
 
   async createOrder(signalData) {
     const signalId = signalData._id;
+    logMessage(
+      `${signalId} | ${String(signalData.type).toUpperCase()} | ${
+        signalData.symbol
+      } @ ${signalData.price}`
+    );
 
     const [account] = await this.db("accounts")
       .where({ type: ENVIRONMENT })
@@ -46,6 +55,11 @@ module.exports = class Observer {
       !whitelisted ||
       blacklisted
     ) {
+      let reason = "10s order limit reached.";
+      if (!enoughBalance) reason = "Not enough balance.";
+      if (!whitelisted) reason = "Pair not whitelisted.";
+      if (blacklisted) reason = "Pair is blacklisted.";
+      logMessage(`${signalId} | Unable to continue. Reason: ${reason}`);
       return;
     }
 
@@ -81,6 +95,9 @@ module.exports = class Observer {
         let order = await this.getOrderFromDbOrBinance(signal);
 
         if (order?.status !== "CANCELED" && order?.status !== "FILLED") {
+          logMessage(
+            `${signalId} | Order (${order.symbol}-${order.orderId}) has not been filled. Cancelling...`
+          );
           const cancelQuery = new URLSearchParams({
             symbol: order.symbol,
             orderId: order.orderId
@@ -96,6 +113,7 @@ module.exports = class Observer {
             : 0);
 
         if (quantityToSell === 0) {
+          logMessage(`${signalId} | Nothing to sell.`);
           return;
         }
 
@@ -104,6 +122,10 @@ module.exports = class Observer {
           signalData.symbol
         );
       }
+      logMessage(
+        signalId + " | Attempting to create order: ",
+        JSON.stringify(query)
+      );
       const searchParams = new URLSearchParams(query).toString();
       const { data, headers } = await binance.post(
         `/api/v3/order?${searchParams}`
@@ -112,6 +134,10 @@ module.exports = class Observer {
       await this.checkHeaders(headers);
 
       if (!!data?.orderId) {
+        logMessage(
+          signalId + " | Request completed. Order created: ",
+          data.symbol + "-" + data.orderId
+        );
         await this.db("signals").insert({
           symbol: signalData.symbol,
           id: signalId,
@@ -184,12 +210,18 @@ module.exports = class Observer {
         let order = await this.getOrderFromDbOrBinance(paramOrder);
         if (order?.status !== "CANCELED" && order?.status !== "FILLED") {
           if (paramOrder.side === "BUY") {
+            logMessage(
+              `Limit buy order (${order.symbol}-${order.orderId}) has timed out. Cancelling...`
+            );
             const cancelQuery = new URLSearchParams({
               symbol: order.symbol,
               orderId: order.orderId
             }).toString();
             await binance.delete(`/api/v3/order?${cancelQuery}`);
           } else {
+            logMessage(
+              `Limit sell order (${order.symbol}-${order.orderId}) has timed out. Creating new market order instead.`
+            );
             const [signal] = this.db("signals")
               .where({ symbol: paramOrder.symbol })
               .andWhere({ orderId: paramOrder.orderId })
@@ -208,12 +240,29 @@ module.exports = class Observer {
 
   async init() {
     try {
+      logMessage(
+        "Configuration: ",
+        JSON.stringify(
+          {
+            WS_API_URL,
+            ENVIRONMENT,
+            QUOTE_ASSET,
+            DEFAULT_BUY_AMOUNT,
+            BUY_ORDER_TYPE,
+            SELL_ORDER_TYPE,
+            WHITELIST,
+            BLACKLIST,
+            BUY_ORDER_TTL,
+            SELL_ORDER_TTL
+          },
+          null,
+          2
+        )
+      );
       this.client = new ws(WS_API_URL);
 
       this.client.on("open", () => {
-        console.log(
-          `${new Date().toISOString()} | Signals Observer | Connection open.`
-        );
+        logMessage(`Signals Observer | Connection open.`);
       });
 
       this.client.on("ping", () => {
@@ -231,14 +280,12 @@ module.exports = class Observer {
       });
 
       this.client.on("error", () => {
-        console.log(`${new Date().toISOString()} | Signals Observer | ERROR`);
+        logMessage(`Signals Observer | ERROR`);
         process.exit();
       });
 
       this.client.on("close", async () => {
-        console.log(
-          `${new Date().toISOString()} | Signals Observer | Stream closed.`
-        );
+        logMessage(`Signals Observer | Connection closed.`);
         await this.init();
       });
     } catch (error) {
